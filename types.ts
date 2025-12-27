@@ -5,7 +5,8 @@ export enum Category {
   MATH = 'Math & Science',
   CONVERTER = 'Unit Converters',
   DEVELOPER = 'Developer Tools',
-  LIFESTYLE = 'Lifestyle & Beauty'
+  LIFESTYLE = 'Lifestyle & Beauty',
+  NEWS = 'News & Trends'
 }
 
 export interface Tool {

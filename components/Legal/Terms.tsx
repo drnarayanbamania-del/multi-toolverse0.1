@@ -46,12 +46,11 @@ const Terms: React.FC = () => {
           </h2>
           <div className="pl-11 leading-relaxed">
             <p>
-              The application processes all calculations locally on your device where possible. Your privacy is paramount. Developed by <span className="font-bold text-primary-500">Narayan Singh</span>, Multi Tool Verse aims to provide a secure environment. We do not sell your personal calculation history to third parties.
+              The application processes all calculations locally on your device where possible. Your privacy is paramount. Multi Tool Verse aims to provide a secure environment. We do not sell your personal calculation history to third parties.
             </p>
           </div>
         </section>
 
-        {/* Fixed tag mismatch here: closing with </section> instead of </div> */}
         <section className="space-y-4">
           <h2 className="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-3">
             <span className="w-8 h-8 rounded-lg bg-primary-500/10 text-primary-500 flex items-center justify-center text-sm">3</span>
@@ -59,25 +58,16 @@ const Terms: React.FC = () => {
           </h2>
           <div className="pl-11 leading-relaxed">
             <p>
-              The tools and calculators provided are for informational purposes only. While we strive for 100% accuracy, Multi Tool Verse and its developer are not responsible for any financial, health, or data decisions made based on the application's output. Always consult a professional for critical matters.
+              The tools and calculators provided are for informational purposes only. While we strive for accuracy, Multi Tool Verse and its developers are not responsible for any financial, health, or data decisions made based on the application's output. Always consult a professional for critical matters.
             </p>
           </div>
         </section>
       </div>
 
-      <div className="bg-primary-500/5 dark:bg-primary-500/10 rounded-[2rem] p-8 border border-primary-500/10">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <h3 className="text-sm font-black text-primary-500 uppercase tracking-widest mb-2">Developer Support</h3>
-            <p className="text-lg font-black text-gray-900 dark:text-white">Narayan Singh</p>
-            <p className="text-xs font-bold text-gray-400 mt-1">Mobile: 9300119509</p>
-          </div>
-          <a 
-            href="tel:9300119509" 
-            className="px-8 py-4 bg-primary-500 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary-500/20 hover:scale-105 active:scale-95 transition-all"
-          >
-            Contact Support
-          </a>
+      <div className="mt-8 bg-primary-500/5 dark:bg-primary-500/10 rounded-[2rem] p-8 border border-primary-500/10">
+        <div className="text-center">
+          <h3 className="text-sm font-black text-primary-500 uppercase tracking-widest mb-2">Support</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400">For inquiries or bug reports, please contact our community support team through official channels.</p>
         </div>
       </div>
     </div>

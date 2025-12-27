@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import AdSlot from '../Common/AdSlot.tsx';
@@ -14,8 +13,9 @@ const BMICalculator: React.FC = () => {
   const [colorClass, setColorClass] = useState<string>('from-green-500 to-emerald-600');
   const [textColor, setTextColor] = useState<string>('text-green-500');
   
-  // Feedback state
+  // Feedback and Animation state
   const [showToast, setShowToast] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // Initial load from URL parameters
   useEffect(() => {
@@ -37,7 +37,15 @@ const BMICalculator: React.FC = () => {
     if (weight > 0 && height > 0) {
       const heightInMeters = height / 100;
       const score = weight / (heightInMeters * heightInMeters);
-      setBmi(parseFloat(score.toFixed(1)));
+      const roundedBmi = parseFloat(score.toFixed(1));
+      
+      // Trigger subtle grow/shrink animation if BMI value changed
+      if (roundedBmi !== bmi) {
+        setIsAnimating(true);
+        const timer = setTimeout(() => setIsAnimating(false), 450);
+        setBmi(roundedBmi);
+        return () => clearTimeout(timer);
+      }
 
       if (score < 18.5) {
         setCategory('Underweight');
@@ -59,7 +67,7 @@ const BMICalculator: React.FC = () => {
     } else {
       setBmi(null);
     }
-  }, [weight, height]);
+  }, [weight, height, bmi]);
 
   const handleReset = () => {
     setWeight(70);
@@ -136,7 +144,7 @@ const BMICalculator: React.FC = () => {
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-10" aria-labelledby="bmi-title">
         {/* Input Controls */}
         <div className="lg:col-span-7 space-y-8">
-          <div className="bg-white/80 dark:bg-slate-800/60 rounded-[2.5rem] p-8 md:p-10 border border-gray-100 dark:border-white/10 shadow-xl dark:shadow-none backdrop-blur-sm">
+          <div className="bg-white/80 dark:bg-slate-800/60 rounded-[2.5rem] p-8 md:p-10 border border-gray-100 dark:border-white/10 shadow-xl dark:shadow-none backdrop-blur-sm relative">
             
             <div className="mb-12">
               <div className="flex justify-between items-center mb-6">
@@ -167,7 +175,7 @@ const BMICalculator: React.FC = () => {
               />
             </div>
 
-            <div>
+            <div className="mb-12">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-slate-900 text-primary-500 flex items-center justify-center">
@@ -195,6 +203,17 @@ const BMICalculator: React.FC = () => {
                 className="w-full h-3 bg-gray-100 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-primary-500"
               />
             </div>
+
+            {/* In-Card Reset Button */}
+            <div className="flex justify-center pt-4">
+              <button 
+                onClick={handleReset}
+                className="flex items-center gap-2 px-6 py-2.5 bg-gray-100 dark:bg-slate-900 text-gray-500 dark:text-gray-400 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 transition-all active:scale-95 border border-transparent hover:border-red-200 dark:hover:border-red-500/20 shadow-sm"
+              >
+                <i className="fas fa-rotate-left"></i>
+                Reset to Default
+              </button>
+            </div>
           </div>
 
           <article className="bg-gradient-to-br from-gray-900 to-slate-950 rounded-[2.5rem] p-8 text-white relative overflow-hidden group shadow-lg">
@@ -215,20 +234,20 @@ const BMICalculator: React.FC = () => {
           <div 
             className="flex-1 bg-white/80 dark:bg-slate-800/60 rounded-[2.5rem] border border-gray-100 dark:border-white/10 p-10 flex flex-col items-center justify-center text-center shadow-xl dark:shadow-none relative overflow-hidden backdrop-blur-sm"
           >
-            {bmi ? (
-              <div className="w-full space-y-8 animate-in zoom-in duration-500">
+            {bmi !== null ? (
+              <div className="w-full space-y-8">
                 <div>
                   <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em] mb-4">Your Calculated BMI</p>
                   <div 
-                    key={bmi} 
-                    className={`text-8xl font-black bg-gradient-to-br ${colorClass} bg-clip-text text-transparent drop-shadow-sm animate-pop`}
+                    className={`text-8xl font-black bg-gradient-to-br ${colorClass} bg-clip-text text-transparent drop-shadow-sm ${isAnimating ? 'animate-pop' : ''}`}
+                    style={{ transition: 'color 0.5s ease' }}
                   >
                     {bmi}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <div className={`text-3xl font-black ${textColor}`}>{category}</div>
+                  <div className={`text-3xl font-black ${textColor} transition-colors duration-500`}>{category}</div>
                 </div>
 
                 <div className="w-full pt-8 space-y-4">
@@ -240,7 +259,7 @@ const BMICalculator: React.FC = () => {
                         <div className="h-full bg-red-500" style={{ width: '31.5%' }}></div>
                       </div>
                       <div 
-                        className="absolute top-0 bottom-0 w-1 bg-white dark:bg-slate-300 shadow-lg border-x border-gray-400 transition-all duration-1000"
+                        className="absolute top-0 bottom-0 w-1 bg-white dark:bg-slate-300 shadow-lg border-x border-gray-400 transition-all duration-700"
                         style={{ left: `${Math.min(Math.max((bmi / 40) * 100, 2), 98)}%` }}
                       ></div>
                    </div>

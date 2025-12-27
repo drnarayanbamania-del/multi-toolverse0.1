@@ -14,6 +14,8 @@ import CurrencyConverter from './components/Calculators/CurrencyConverter.tsx';
 import InterestCalculator from './components/Calculators/InterestCalculator.tsx';
 import TemperatureConverter from './components/Calculators/TemperatureConverter.tsx';
 import BeautyTips from './components/Calculators/BeautyTips.tsx';
+import DailyNews from './components/Calculators/DailyNews.tsx';
+import AdminPanel from './components/Admin/AdminPanel.tsx';
 import AuthModal from './components/Auth/AuthModal.tsx';
 import Terms from './components/Legal/Terms.tsx';
 
@@ -83,6 +85,7 @@ const App: React.FC = () => {
             <div className="max-w-6xl mx-auto">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/news/daily" element={<DailyNews />} />
                 <Route path="/health/bmi" element={<BMICalculator />} />
                 <Route path="/health/calories" element={<CalorieCalculator />} />
                 <Route path="/lifestyle/beauty-tips" element={<BeautyTips />} />
@@ -93,6 +96,7 @@ const App: React.FC = () => {
                 <Route path="/convert/length" element={<LengthConverter />} />
                 <Route path="/convert/temperature" element={<TemperatureConverter />} />
                 <Route path="/dev/base64" element={<Base64Tool />} />
+                <Route path="/admin" element={<AdminPanel />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
@@ -102,14 +106,8 @@ const App: React.FC = () => {
               <div className="max-w-4xl mx-auto px-4">
                 <p className="font-bold text-gray-700 dark:text-gray-300 mb-2 tracking-tight">© 2024 MultiToolVerse 0.1</p>
                 <div className="flex flex-col items-center gap-2 mb-4">
-                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary-500">Developed By</p>
-                  <p className="text-lg font-black text-gray-900 dark:text-white">Narayan Singh</p>
-                  <div className="flex items-center gap-3 mt-1">
-                    <a href="tel:9300119509" className="flex items-center gap-2 px-4 py-1.5 bg-white dark:bg-slate-800 rounded-full border border-gray-200 dark:border-white/10 hover:border-primary-500/50 hover:text-primary-500 transition-all shadow-sm">
-                      <i className="fas fa-phone text-[10px]"></i>
-                      <span className="text-xs font-bold tracking-wider">9300119509</span>
-                    </a>
-                  </div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary-500">Built for the community</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">Empowering users with private, efficient tools.</p>
                 </div>
                 <div className="flex justify-center gap-6 pt-4 border-t border-gray-100 dark:border-white/5">
                   <a href="#" className="text-[10px] font-black uppercase tracking-widest hover:text-primary-500 transition-colors">Privacy</a>

@@ -3,6 +3,15 @@ import { Category, Tool } from './types.ts';
 
 export const TOOLS: Tool[] = [
   {
+    id: 'daily-news',
+    name: 'Daily News',
+    description: 'Real-time news summaries and trending topics powered by AI search.',
+    category: Category.NEWS,
+    icon: 'fa-newspaper',
+    path: '/news/daily',
+    keywords: ['news', 'trends', 'updates', 'daily', 'headlines']
+  },
+  {
     id: 'bmi-calculator',
     name: 'BMI Calculator',
     description: 'Calculate your Body Mass Index and understand your weight category.',

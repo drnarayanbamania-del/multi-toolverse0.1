@@ -63,6 +63,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar, user }) => {
                   )}
                 </NavLink>
               </li>
+              <li>
+                <NavLink
+                  to="/admin"
+                  onClick={() => { if (window.innerWidth < 768) toggleSidebar(); }}
+                  className={({ isActive }) => `
+                    flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group
+                    ${isActive 
+                      ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg' 
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100/80 dark:hover:bg-white/10 hover:translate-x-1'}
+                  `}
+                >
+                  {({ isActive }) => (
+                    <>
+                      <i className={`fas fa-user-shield w-5 text-center ${isActive ? '' : 'text-gray-400 dark:text-gray-400 group-hover:text-primary-500 transition-colors'}`}></i>
+                      <span>Admin Control</span>
+                    </>
+                  )}
+                </NavLink>
+              </li>
             </ul>
           </div>
 

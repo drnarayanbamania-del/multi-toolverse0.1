@@ -1,6 +1,13 @@
 
 import { Category, Tool } from './types.ts';
 
+export const AD_CONFIG = {
+  testDeviceIds: ['ABCDEF012345'], // Mock for web context
+  enableTestMode: window.location.hostname === 'localhost',
+  publisherId: 'ca-pub-8721922732049886',
+  slotId: '8272627638'
+};
+
 export const TOOLS: Tool[] = [
   {
     id: 'daily-news',

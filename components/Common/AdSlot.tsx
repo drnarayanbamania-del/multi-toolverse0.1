@@ -1,8 +1,11 @@
+
 import React, { useEffect } from 'react';
+import { AD_CONFIG } from '../../constants.tsx';
 
 interface AdSlotProps {
   type?: 'horizontal' | 'square' | 'vertical';
   className?: string;
+  isTest?: boolean;
 }
 
 declare global {
@@ -11,10 +14,11 @@ declare global {
   }
 }
 
-const AdSlot: React.FC<AdSlotProps> = ({ type = 'horizontal', className = '' }) => {
+const AdSlot: React.FC<AdSlotProps> = ({ type = 'horizontal', className = '', isTest = false }) => {
+  const activeTestMode = isTest || AD_CONFIG.enableTestMode;
+
   useEffect(() => {
     try {
-      // Ensure the adsbygoogle array is available and push a new ad unit request
       if (typeof window !== 'undefined') {
         (window.adsbygoogle = window.adsbygoogle || []).push({});
       }
@@ -33,17 +37,19 @@ const AdSlot: React.FC<AdSlotProps> = ({ type = 'horizontal', className = '' }) 
     <div className={`relative group ${className} flex justify-center`}>
       <div className={`${dimensions[type]} bg-gray-50/50 dark:bg-slate-800/20 border border-gray-100 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 overflow-hidden`}>
         {/* Ad Compliance Badge */}
-        <div className="absolute top-1 right-2 text-[8px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-600 z-10 pointer-events-none">
-          Ad
+        <div className={`absolute top-1 right-2 text-[8px] font-black uppercase tracking-widest z-10 pointer-events-none ${activeTestMode ? 'text-amber-500' : 'text-gray-400 dark:text-gray-600'}`}>
+          {activeTestMode ? 'Test Ad' : 'Ad'}
         </div>
         
-        {/* The Actual Google Ad Tag */}
+        {/* Google Ad Tag with configuration */}
         <ins className="adsbygoogle"
              style={{ display: 'block', width: '100%', height: '100%' }}
-             data-ad-client="ca-pub-8721922732049886"
-             data-ad-slot="8272627638"
+             data-ad-client={AD_CONFIG.publisherId}
+             data-ad-slot={AD_CONFIG.slotId}
              data-ad-format={type === 'horizontal' ? 'auto' : 'rectangle'}
-             data-full-width-responsive="true">
+             data-full-width-responsive="true"
+             {...(activeTestMode ? { 'data-adtest': 'on' } : {})}
+        >
         </ins>
 
         {/* Shine effect for visual feedback while loading */}

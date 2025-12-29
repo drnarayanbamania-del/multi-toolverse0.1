@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { AD_CONFIG } from '../../constants.tsx';
 
 interface AdSlotProps {
@@ -16,15 +16,37 @@ declare global {
 
 const AdSlot: React.FC<AdSlotProps> = ({ type = 'horizontal', className = '', isTest = false }) => {
   const activeTestMode = isTest || AD_CONFIG.enableTestMode;
+  const adRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
+    let timer: any;
+    
+    const initAd = () => {
+      // Ensure the container exists and has a width > 0 to prevent AdSense "availableWidth=0" error
+      if (adRef.current && adRef.current.offsetWidth > 0) {
+        try {
+          if (typeof window !== 'undefined') {
+            (window.adsbygoogle = window.adsbygoogle || []).push({});
+          }
+        } catch (e) {
+          // Only log if not a standard "already filled" or "width 0" error which we're already trying to avoid
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('AdSense Push Warning:', e);
+          }
+        }
+      } else if (adRef.current) {
+        // If width is still 0, retry once after a short delay
+        timer = setTimeout(initAd, 200);
       }
-    } catch (e) {
-      console.error('AdSense Initialization Error:', e);
-    }
+    };
+
+    // Use requestAnimationFrame to wait for the browser to finish layout/paint
+    // and a small timeout to account for CSS animations (like animate-in)
+    timer = setTimeout(() => {
+      requestAnimationFrame(initAd);
+    }, 150);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const dimensions = {
@@ -34,7 +56,7 @@ const AdSlot: React.FC<AdSlotProps> = ({ type = 'horizontal', className = '', is
   };
 
   return (
-    <div className={`relative group ${className} flex justify-center`}>
+    <div ref={adRef} className={`relative group ${className} flex justify-center`}>
       <div className={`${dimensions[type]} bg-gray-50/50 dark:bg-slate-800/20 border border-gray-100 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center transition-all duration-300 overflow-hidden`}>
         {/* Ad Compliance Badge */}
         <div className={`absolute top-1 right-2 text-[8px] font-black uppercase tracking-widest z-10 pointer-events-none ${activeTestMode ? 'text-amber-500' : 'text-gray-400 dark:text-gray-600'}`}>

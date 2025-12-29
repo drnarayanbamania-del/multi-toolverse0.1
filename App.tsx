@@ -14,10 +14,12 @@ import CurrencyConverter from './components/Calculators/CurrencyConverter.tsx';
 import InterestCalculator from './components/Calculators/InterestCalculator.tsx';
 import TemperatureConverter from './components/Calculators/TemperatureConverter.tsx';
 import BeautyTips from './components/Calculators/BeautyTips.tsx';
+import HealthWellness from './components/Calculators/HealthWellness.tsx';
 import DailyNews from './components/Calculators/DailyNews.tsx';
 import AdminPanel from './components/Admin/AdminPanel.tsx';
 import AuthModal from './components/Auth/AuthModal.tsx';
 import Terms from './components/Legal/Terms.tsx';
+import About from './components/Legal/About.tsx';
 
 export interface UserProfile {
   name: string;
@@ -89,6 +91,7 @@ const App: React.FC = () => {
                 <Route path="/health/bmi" element={<BMICalculator />} />
                 <Route path="/health/calories" element={<CalorieCalculator />} />
                 <Route path="/lifestyle/beauty-tips" element={<BeautyTips />} />
+                <Route path="/lifestyle/health-wellness" element={<HealthWellness />} />
                 <Route path="/finance/emi" element={<LoanCalculator />} />
                 <Route path="/finance/interest" element={<InterestCalculator />} />
                 <Route path="/finance/currency" element={<CurrencyConverter />} />
@@ -98,28 +101,30 @@ const App: React.FC = () => {
                 <Route path="/dev/base64" element={<Base64Tool />} />
                 <Route path="/admin" element={<AdminPanel />} />
                 <Route path="/terms" element={<Terms />} />
+                <Route path="/about" element={<About />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>
             
             <footer className="mt-12 text-center text-gray-500 dark:text-gray-400 text-sm py-8 border-t border-gray-200 dark:border-slate-800">
               <div className="max-w-4xl mx-auto px-4">
-                <p className="font-bold text-gray-700 dark:text-gray-300 mb-2 tracking-tight">© 2024 MultiToolVerse 0.1</p>
+                <p className="font-bold text-gray-700 dark:text-gray-300 mb-2 tracking-tight">© 2024 Multi ToolVerse 0.1</p>
                 <div className="flex flex-col items-center gap-2 mb-4">
-                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary-500">Built for the community</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">Empowering users with private, efficient tools.</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-brand-orange">Universe of Utility</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">Providing expert tools for calculation, health, and development.</p>
                 </div>
                 <div className="flex justify-center gap-6 pt-4 border-t border-gray-100 dark:border-white/5">
-                  <a href="#" className="text-[10px] font-black uppercase tracking-widest hover:text-primary-500 transition-colors">Privacy</a>
-                  <NavLink to="/terms" className="text-[10px] font-black uppercase tracking-widest hover:text-primary-500 transition-colors">Terms</NavLink>
-                  <a href="#" className="text-[10px] font-black uppercase tracking-widest hover:text-primary-500 transition-colors">API Docs</a>
+                  <NavLink to="/about" className="text-[10px] font-black uppercase tracking-widest hover:text-brand-orange transition-colors">About Us</NavLink>
+                  <NavLink to="/terms" className="text-[10px] font-black uppercase tracking-widest hover:text-brand-orange transition-colors">Terms</NavLink>
+                  <a href="#" className="text-[10px] font-black uppercase tracking-widest hover:text-brand-orange transition-colors">Privacy</a>
+                  <a href="#" className="text-[10px] font-black uppercase tracking-widest hover:text-brand-orange transition-colors">Contact</a>
                 </div>
               </div>
             </footer>
           </main>
         </div>
 
-        {/* Global Auth Modal */}
+        {/* Auth Modal Rendering */}
         {isAuthModalOpen && (
           <AuthModal 
             onClose={() => setIsAuthModalOpen(false)} 

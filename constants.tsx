@@ -46,6 +46,15 @@ export const TOOLS: Tool[] = [
     keywords: ['beauty', 'skin', 'skincare', 'makeup', 'routine', 'glow']
   },
   {
+    id: 'health-wellness',
+    name: 'Health & Wellness',
+    description: 'Holistic wellness plans and mental health insights powered by AI.',
+    category: Category.LIFESTYLE,
+    icon: 'fa-leaf',
+    path: '/lifestyle/health-wellness',
+    keywords: ['health', 'wellness', 'meditation', 'mental health', 'habits']
+  },
+  {
     id: 'loan-emi-calculator',
     name: 'Loan/EMI Calculator',
     description: 'Estimate your monthly loan repayments and total interest payable.',
@@ -111,3 +120,14 @@ export const TOOLS: Tool[] = [
 ];
 
 export const CATEGORIES = Object.values(Category);
+
+// Fix: Adding missing DISPLAY_ORDER export used in Dashboard.tsx
+export const DISPLAY_ORDER = [
+  Category.NEWS,
+  Category.FINANCE,
+  Category.HEALTH,
+  Category.MATH,
+  Category.CONVERTER,
+  Category.DEVELOPER,
+  Category.LIFESTYLE
+];

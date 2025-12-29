@@ -1,135 +1,135 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MultiToolVerse0.1 - Your Utility Universe</title>
-    <!-- Google AdSense / AdMob for Web -->
+    <title>Multi ToolVerse - Your Utility Universe</title>
+    <!-- Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8721922732049886" crossorigin="anonymous"></script>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
+      :root {
+        --brand-navy: #0D234D;
+        --brand-orange: #FF7A21;
+      }
       body {
         font-family: 'Outfit', sans-serif;
+        background-color: #f8fafc;
+        color: #1e293b;
+        overflow-x: hidden;
       }
-      .glass {
+      .dark body {
+        background-color: #020617;
+        color: #f1f5f9;
+      }
+      
+      /* Premium Glassmorphism */
+      .glass-card {
         background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
       }
-      .dark .glass {
-        background: rgba(15, 23, 42, 0.75);
-      }
-      .mesh-gradient {
-        background-color: #ffffff;
-        background-image: 
-          radial-gradient(at 0% 0%, hsla(217,100%,95%,1) 0, transparent 50%), 
-          radial-gradient(at 50% 0%, hsla(225,100%,95%,1) 0, transparent 50%), 
-          radial-gradient(at 100% 0%, hsla(339,100%,95%,1) 0, transparent 50%);
-      }
-      .dark .mesh-gradient {
-        background-color: #020617;
-        background-image: 
-          radial-gradient(at 0% 0%, hsla(217,50%,10%,1) 0, transparent 50%), 
-          radial-gradient(at 50% 0%, hsla(225,50%,10%,1) 0, transparent 50%), 
-          radial-gradient(at 100% 0%, hsla(339,50%,10%,1) 0, transparent 50%);
+      .dark .glass-card {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
       }
 
-      /* ===== NAVBAR FIXED ===== */
-      .navbar {
+      /* Animated Mesh Gradient Background */
+      .mesh-bg {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
-        background: #ffffffdd; 
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+        height: 100%;
+        z-index: -1;
+        background-color: #f8fafc;
+        background-image: 
+          radial-gradient(at 0% 0%, hsla(217,100%,97%,1) 0, transparent 50%), 
+          radial-gradient(at 50% 0%, hsla(225,100%,97%,1) 0, transparent 50%), 
+          radial-gradient(at 100% 0%, hsla(33,100%,95%,1) 0, transparent 50%);
+      }
+      .dark .mesh-bg {
+        background-color: #020617;
+        background-image: 
+          radial-gradient(at 0% 0%, hsla(217,50%,10%,1) 0, transparent 50%), 
+          radial-gradient(at 50% 0%, hsla(225,50%,10%,1) 0, transparent 50%), 
+          radial-gradient(at 100% 0%, hsla(33,50%,10%,1) 0, transparent 50%);
+      }
+
+      .navbar {
+        position: fixed;
+        top: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 2rem);
+        max-width: 1400px;
+        height: 64px;
         z-index: 1000;
-        padding: 10px 0;
-        border-bottom: 1px solid #e0e0e0;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
       }
       .dark .navbar {
-        background: #0f172add; 
-        border-bottom: 1px solid #1e293b;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.05);
       }
 
-      .navbar-content {
-        display: flex;
-        align-items: center;
-        justify-content: center; 
-        gap: 12px;
-        max-width: 1440px;
-        margin: 0 auto;
-        padding: 0 24px;
-        position: relative;
-      }
-
-      .logo-box {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        text-decoration: none;
-        cursor: pointer;
-      }
-
-      .logo-img {
-        width: 45px;
-        height: 45px;
-        object-fit: contain;
-        filter: drop-shadow(0 0 8px rgba(255,165,0,0.7));
-        transition: 0.3s;
-      }
-
-      .logo-img:hover {
-        filter: drop-shadow(0 0 15px rgba(255,165,0,1));
-        transform: scale(1.1);
-      }
-
-      .logo-text {
-        font-size: 24px;
+      .logo-brand-text {
         font-family: 'Poppins', sans-serif;
-        font-weight: 700;
-        color: #222;
-        margin: 0;
+        font-weight: 800;
+        font-size: 22px;
+        letter-spacing: -0.03em;
       }
-      .dark .logo-text {
-        color: #fff;
+      
+      .bento-card {
+        transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        position: relative;
+        overflow: hidden;
       }
-
-      .logo-text span {
-        background: linear-gradient(90deg, #ff7a00, #00b34b, #0085ff);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        display: inline-block;
+      .bento-card:hover {
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
       }
-
-      .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: rgba(156, 163, 175, 0.2);
-        border-radius: 10px;
-      }
-      .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.1);
+      .dark .bento-card:hover {
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
       }
 
-      @keyframes pop {
-        0% { transform: scale(1); }
-        40% { transform: scale(1.08); }
-        100% { transform: scale(1); }
+      /* Glowing border effect on hover */
+      .bento-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: 1px;
+        background: linear-gradient(45deg, transparent, var(--brand-orange), transparent);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        opacity: 0;
+        transition: opacity 0.3s;
       }
-      .animate-pop {
-        animation: pop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        display: inline-block;
-        will-change: transform;
+      .bento-card:hover::after {
+        opacity: 1;
+      }
+
+      @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+      }
+      .animate-float {
+        animation: float 5s ease-in-out infinite;
       }
     </style>
     <script>
@@ -138,26 +138,14 @@
         theme: {
           extend: {
             colors: {
-              primary: {
-                50: '#eff6ff',
-                100: '#dbeafe',
-                200: '#bfdbfe',
-                300: '#93c5fd',
-                400: '#60a5fa',
-                500: '#3b82f6',
-                600: '#2563eb',
-                700: '#1d4ed8',
-                800: '#1e40af',
-                900: '#1e3a8a',
-              },
-              slate: {
-                950: '#020617',
-              },
-              secondary: '#10b981',
-              accent: '#f59e0b',
+              brand: {
+                navy: '#0D234D',
+                orange: '#FF7A21',
+              }
             },
-            animation: {
-              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            borderRadius: {
+              '3xl': '24px',
+              '4xl': '32px',
             }
           }
         }
@@ -175,7 +163,8 @@
 }
 </script>
 </head>
-<body class="mesh-gradient transition-colors duration-500 min-h-screen custom-scrollbar">
+<body class="transition-colors duration-500 min-h-screen">
+    <div class="mesh-bg"></div>
     <div id="root"></div>
 </body>
 </html>

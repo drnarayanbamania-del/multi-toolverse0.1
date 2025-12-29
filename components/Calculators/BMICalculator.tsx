@@ -1,304 +1,185 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import AdSlot from '../Common/AdSlot.tsx';
 
 const BMICalculator: React.FC = () => {
-  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   
-  // State for metrics
-  const [weight, setWeight] = useState<number>(70);
-  const [height, setHeight] = useState<number>(170);
+  // Initialize state from URL params if present, otherwise defaults
+  const [weight, setWeight] = useState<number>(() => Number(searchParams.get('w')) || 70);
+  const [height, setHeight] = useState<number>(() => Number(searchParams.get('h')) || 170);
+  
   const [bmi, setBmi] = useState<number | null>(null);
   const [category, setCategory] = useState<string>('');
-  const [colorClass, setColorClass] = useState<string>('from-green-500 to-emerald-600');
-  const [textColor, setTextColor] = useState<string>('text-green-500');
-  
-  // Feedback and Animation state
-  const [showToast, setShowToast] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [colorClass, setColorClass] = useState<string>('from-emerald-500 to-green-600');
+  const [isShareFeedback, setIsShareFeedback] = useState(false);
 
-  // Initial load from URL parameters
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const w = params.get('w');
-    const h = params.get('h');
-    
-    if (w) {
-      const parsedW = parseFloat(w);
-      if (!isNaN(parsedW) && parsedW >= 20 && parsedW <= 200) setWeight(parsedW);
-    }
-    if (h) {
-      const parsedH = parseFloat(h);
-      if (!isNaN(parsedH) && parsedH >= 100 && parsedH <= 250) setHeight(parsedH);
-    }
-  }, [location]);
-
+  // Synchronize BMI calculation
   useEffect(() => {
     if (weight > 0 && height > 0) {
-      const heightInMeters = height / 100;
-      const score = weight / (heightInMeters * heightInMeters);
-      const roundedBmi = parseFloat(score.toFixed(1));
+      const score = weight / ((height / 100) ** 2);
+      setBmi(parseFloat(score.toFixed(1)));
       
-      // Trigger subtle grow/shrink animation if BMI value changed
-      if (roundedBmi !== bmi) {
-        setIsAnimating(true);
-        const timer = setTimeout(() => setIsAnimating(false), 450);
-        setBmi(roundedBmi);
-        return () => clearTimeout(timer);
+      if (score < 18.5) { 
+        setCategory('Underweight'); 
+        setColorClass('from-blue-500 to-cyan-500'); 
+      } else if (score < 25) { 
+        setCategory('Healthy'); 
+        setColorClass('from-emerald-500 to-green-500'); 
+      } else if (score < 30) { 
+        setCategory('Overweight'); 
+        setColorClass('from-orange-400 to-orange-600'); 
+      } else { 
+        setCategory('Obese'); 
+        setColorClass('from-rose-500 to-red-600'); 
       }
 
-      if (score < 18.5) {
-        setCategory('Underweight');
-        setColorClass('from-blue-500 to-cyan-600');
-        setTextColor('text-blue-500');
-      } else if (score >= 18.5 && score < 25) {
-        setCategory('Healthy Weight');
-        setColorClass('from-green-500 to-emerald-600');
-        setTextColor('text-green-500');
-      } else if (score >= 25 && score < 30) {
-        setCategory('Overweight');
-        setColorClass('from-amber-400 to-orange-500');
-        setTextColor('text-amber-500');
-      } else {
-        setCategory('Obese');
-        setColorClass('from-red-500 to-rose-600');
-        setTextColor('text-red-500');
-      }
-    } else {
-      setBmi(null);
+      // Update URL params without triggering a full re-render loop
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('w', weight.toString());
+      newParams.set('h', height.toString());
+      setSearchParams(newParams, { replace: true });
     }
-  }, [weight, height, bmi]);
-
-  const handleReset = () => {
-    setWeight(70);
-    setHeight(170);
-  };
+  }, [weight, height]);
 
   const handleShare = async () => {
-    const baseUrl = window.location.origin + window.location.pathname;
-    const shareUrl = `${baseUrl}#/health/bmi?w=${weight}&h=${height}`;
+    const shareUrl = window.location.href;
+    const shareText = `My BMI is ${bmi} (${category})! Check yours on Multi ToolVerse.`;
 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'My BMI Result - ToolVerse',
-          text: `My BMI is ${bmi} (${category}). Check yours at ToolVerse!`,
+          title: 'My BMI Result',
+          text: shareText,
           url: shareUrl,
         });
       } catch (err) {
-        console.error('Error sharing:', err);
+        console.log('Share failed', err);
       }
     } else {
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
-      } catch (err) {
-        console.error('Failed to copy link:', err);
-      }
+      // Fallback: Copy to Clipboard
+      navigator.clipboard.writeText(shareUrl);
+      setIsShareFeedback(true);
+      setTimeout(() => setIsShareFeedback(false), 2000);
     }
   };
 
   return (
-    <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 relative">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-900/30 border border-primary-100 dark:border-primary-800 text-[10px] font-black text-primary-600 dark:text-primary-300 uppercase tracking-widest">
-            Health & Fitness
-          </div>
-          <h1 id="bmi-title" className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight">BMI Calculator</h1>
-          <p className="text-gray-500 dark:text-gray-400 max-w-xl">
-            Quickly assess your body weight relative to your height to help determine if you are in a healthy range.
-          </p>
+    <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-20">
+      <header className="space-y-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-orange/10 border border-brand-orange/20 text-[10px] font-black text-brand-orange uppercase tracking-[0.2em]">
+          Health Management
         </div>
-        
-        <div className="flex items-center gap-4 relative">
-           {showToast && (
-             <div className="absolute bottom-full right-0 mb-4 px-4 py-2 bg-slate-900 text-white text-[10px] font-bold rounded-xl shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-300 z-50">
-               <i className="fas fa-check-circle text-secondary mr-2"></i> Link copied to clipboard!
-             </div>
-           )}
-
-           <button 
-             onClick={handleReset}
-             aria-label="Reset calculator to defaults" 
-             className="p-3 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-gray-100 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:text-red-500 transition-all active:scale-95 group relative focus:ring-2 focus:ring-red-500 outline-none"
-           >
-              <i className="fas fa-rotate-left" aria-hidden="true"></i>
-              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 group-focus:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-20">Reset Defaults</span>
-           </button>
-           
-           <button 
-             onClick={handleShare}
-             aria-label="Share this calculation" 
-             className="p-3 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-gray-100 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:text-primary-500 hover:border-primary-500/30 transition-all active:scale-95 focus:ring-2 focus:ring-primary-500 outline-none"
-           >
-              <i className="fas fa-share-nodes" aria-hidden="true"></i>
-           </button>
-        </div>
+        <h1 className="text-4xl md:text-5xl font-black tracking-tight text-brand-navy dark:text-white leading-tight">
+          BMI <span className="text-brand-orange">Calculator</span>
+        </h1>
+        <p className="text-slate-500 dark:text-slate-400 max-w-xl font-medium">
+          Professional-grade body mass index assessment with instant category analysis and sharing.
+        </p>
       </header>
 
-      {/* Top Banner Ad Placement */}
-      <AdSlot type="horizontal" className="mb-10" />
-
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-10" aria-labelledby="bmi-title">
-        {/* Input Controls */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        {/* Controls */}
         <div className="lg:col-span-7 space-y-8">
-          <div className="bg-white/80 dark:bg-slate-800/60 rounded-[2.5rem] p-8 md:p-10 border border-gray-100 dark:border-white/10 shadow-xl dark:shadow-none backdrop-blur-sm relative">
-            
-            <div className="mb-12">
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-slate-900 text-primary-500 flex items-center justify-center">
-                    <i className="fas fa-weight-scale" aria-hidden="true"></i>
-                  </div>
-                  <label htmlFor="weight-input" className="text-lg font-bold text-gray-800 dark:text-white">Weight</label>
+          <div className="glass-card p-10 rounded-4xl border border-gray-100 dark:border-white/5 space-y-12">
+            <div className="space-y-8">
+              <div className="flex justify-between items-center">
+                <div className="space-y-1">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">Body Weight</label>
+                  <p className="text-[10px] font-bold text-slate-300 dark:text-slate-600">Standard measurement (kg)</p>
                 </div>
-                <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-900/80 p-2 rounded-xl border border-gray-100 dark:border-white/10">
-                  <input 
-                    id="weight-input"
-                    type="number" 
-                    value={weight}
-                    onChange={(e) => setWeight(Math.min(200, Math.max(0, Number(e.target.value))))}
-                    className="w-16 text-right bg-transparent border-none font-black text-xl text-primary-500 focus:ring-0"
-                    min="20"
-                    max="200"
-                  />
-                  <span className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase mr-2">kg</span>
+                <div className="px-6 py-3 bg-brand-navy dark:bg-white text-white dark:text-brand-navy rounded-2xl text-2xl font-black shadow-lg">
+                  {weight} <span className="text-xs opacity-60">kg</span>
                 </div>
               </div>
-              <input
-                id="weight-slider"
-                type="range" min="20" max="200" step="1" value={weight}
+              <input 
+                type="range" min="30" max="200" value={weight} 
                 onChange={(e) => setWeight(Number(e.target.value))}
-                className="w-full h-3 bg-gray-100 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-primary-500"
+                className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full appearance-none cursor-pointer accent-brand-orange"
               />
             </div>
 
-            <div className="mb-12">
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-slate-900 text-primary-500 flex items-center justify-center">
-                    <i className="fas fa-ruler-vertical" aria-hidden="true"></i>
-                  </div>
-                  <label htmlFor="height-input" className="text-lg font-bold text-gray-800 dark:text-white">Height</label>
+            <div className="space-y-8">
+              <div className="flex justify-between items-center">
+                <div className="space-y-1">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">Body Height</label>
+                  <p className="text-[10px] font-bold text-slate-300 dark:text-slate-600">Standard measurement (cm)</p>
                 </div>
-                <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-900/80 p-2 rounded-xl border border-gray-100 dark:border-white/10">
-                  <input 
-                    id="height-input"
-                    type="number" 
-                    value={height}
-                    onChange={(e) => setHeight(Math.min(250, Math.max(0, Number(e.target.value))))}
-                    className="w-16 text-right bg-transparent border-none font-black text-xl text-primary-500 focus:ring-0"
-                    min="100"
-                    max="250"
-                  />
-                  <span className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase mr-2">cm</span>
+                <div className="px-6 py-3 bg-brand-navy dark:bg-white text-white dark:text-brand-navy rounded-2xl text-2xl font-black shadow-lg">
+                  {height} <span className="text-xs opacity-60">cm</span>
                 </div>
               </div>
-              <input
-                id="height-slider"
-                type="range" min="100" max="250" step="1" value={height}
+              <input 
+                type="range" min="100" max="250" value={height} 
                 onChange={(e) => setHeight(Number(e.target.value))}
-                className="w-full h-3 bg-gray-100 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-primary-500"
+                className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full appearance-none cursor-pointer accent-brand-orange"
               />
-            </div>
-
-            {/* In-Card Reset Button */}
-            <div className="flex justify-center pt-4">
-              <button 
-                onClick={handleReset}
-                className="flex items-center gap-2 px-6 py-2.5 bg-gray-100 dark:bg-slate-900 text-gray-500 dark:text-gray-400 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 transition-all active:scale-95 border border-transparent hover:border-red-200 dark:hover:border-red-500/20 shadow-sm"
-              >
-                <i className="fas fa-rotate-left"></i>
-                Reset to Default
-              </button>
             </div>
           </div>
 
-          <article className="bg-gradient-to-br from-gray-900 to-slate-950 rounded-[2.5rem] p-8 text-white relative overflow-hidden group shadow-lg">
-            <h3 className="text-xl font-black mb-4 flex items-center gap-2 relative z-10">
-              <i className="fas fa-circle-check text-secondary" aria-hidden="true"></i> Health Tip
-            </h3>
-            <p className="text-gray-300 text-sm leading-relaxed relative z-10 max-w-lg">
-              BMI provides a useful estimate, but remember it doesn't account for muscle mass. Maintaining a balanced diet is the best path to health.
-            </p>
-          </article>
-
-          {/* Bottom Banner Ad Placement */}
-          <AdSlot type="horizontal" className="pt-4" />
+          <div className="bg-brand-navy dark:bg-slate-800 p-8 rounded-4xl text-white flex items-center gap-8 shadow-2xl relative overflow-hidden group">
+             <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform">
+               <i className="fas fa-heart-pulse text-8xl"></i>
+             </div>
+             <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center text-3xl shrink-0">
+               <i className="fas fa-notes-medical text-brand-orange"></i>
+             </div>
+             <div className="relative z-10">
+               <h3 className="font-black text-xl mb-1">Health Advisory</h3>
+               <p className="text-sm text-slate-400 leading-relaxed">BMI is a screening tool, not a diagnostic. For a full clinical evaluation, please consult your healthcare provider.</p>
+             </div>
+          </div>
         </div>
 
-        {/* Results Panel */}
-        <div className="lg:col-span-5 flex flex-col gap-6">
-          <div 
-            className="flex-1 bg-white/80 dark:bg-slate-800/60 rounded-[2.5rem] border border-gray-100 dark:border-white/10 p-10 flex flex-col items-center justify-center text-center shadow-xl dark:shadow-none relative overflow-hidden backdrop-blur-sm"
-          >
+        {/* Result */}
+        <div className="lg:col-span-5 flex flex-col gap-8">
+          <div className="glass-card p-12 rounded-4xl border border-gray-100 dark:border-white/5 flex flex-col items-center text-center space-y-10 min-h-[480px] justify-center relative overflow-hidden">
             {bmi !== null ? (
-              <div className="w-full space-y-8">
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em] mb-4">Your Calculated BMI</p>
-                  <div 
-                    className={`text-8xl font-black bg-gradient-to-br ${colorClass} bg-clip-text text-transparent drop-shadow-sm ${isAnimating ? 'animate-pop' : ''}`}
-                    style={{ transition: 'color 0.5s ease' }}
-                  >
+              <div className="animate-in zoom-in-95 duration-500 space-y-10 w-full">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-400">Current Score</p>
+                  <div className={`text-9xl font-black bg-gradient-to-br ${colorClass} bg-clip-text text-transparent drop-shadow-sm`}>
                     {bmi}
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className={`text-3xl font-black ${textColor} transition-colors duration-500`}>{category}</div>
+                <div className="space-y-6">
+                  <div className={`inline-flex px-10 py-4 rounded-3xl text-white font-black text-xl bg-gradient-to-r ${colorClass} shadow-xl shadow-opacity-20`}>
+                    {category}
+                  </div>
+                  <div className="w-full h-3 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden shadow-inner">
+                    <div className={`h-full bg-gradient-to-r ${colorClass} transition-all duration-1000 cubic-bezier(0.23, 1, 0.32, 1)`} style={{ width: `${Math.min((bmi/40)*100, 100)}%` }} />
+                  </div>
                 </div>
 
-                <div className="w-full pt-8 space-y-4">
-                   <div className="h-4 w-full bg-gray-100 dark:bg-slate-900 rounded-full relative overflow-hidden p-1 shadow-inner">
-                      <div className="h-full w-full flex rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-500" style={{ width: '18.5%' }}></div>
-                        <div className="h-full bg-green-500" style={{ width: '25%' }}></div>
-                        <div className="h-full bg-amber-500" style={{ width: '25%' }}></div>
-                        <div className="h-full bg-red-500" style={{ width: '31.5%' }}></div>
-                      </div>
-                      <div 
-                        className="absolute top-0 bottom-0 w-1 bg-white dark:bg-slate-300 shadow-lg border-x border-gray-400 transition-all duration-700"
-                        style={{ left: `${Math.min(Math.max((bmi / 40) * 100, 2), 98)}%` }}
-                      ></div>
-                   </div>
+                <div className="pt-6 border-t border-slate-50 dark:border-white/5 w-full">
+                  <button 
+                    onClick={handleShare}
+                    className="w-full group relative flex items-center justify-center gap-3 py-5 bg-brand-navy dark:bg-white text-white dark:text-brand-navy rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl hover:scale-105 active:scale-95 transition-all overflow-hidden"
+                  >
+                    {isShareFeedback ? (
+                      <span className="flex items-center gap-2 animate-in slide-in-from-bottom-2">
+                        <i className="fas fa-check text-emerald-500"></i> Copied to Clipboard
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <i className="fas fa-share-nodes group-hover:rotate-12 transition-transform"></i> Share Result
+                      </span>
+                    )}
+                  </button>
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                <i className="fas fa-calculator text-3xl text-gray-300" aria-hidden="true"></i>
-                <p className="text-gray-400 dark:text-gray-500 font-bold">Input your metrics to see results</p>
+              <div className="space-y-4 opacity-20">
+                <i className="fas fa-scale-balanced text-7xl text-slate-300"></i>
+                <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Awaiting Inputs</p>
               </div>
             )}
           </div>
-
-          {/* Square Ad Slot in Sidebar */}
-          <AdSlot type="square" className="mx-auto" />
-
-          <aside className="bg-white/80 dark:bg-slate-800/60 rounded-[2.5rem] border border-gray-100 dark:border-white/10 p-8 backdrop-blur-sm">
-            <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest mb-6 flex items-center gap-2">
-              <i className="fas fa-list-ul text-primary-500" aria-hidden="true"></i> Standard Scale
-            </h4>
-            <div className="space-y-3">
-              {[
-                { range: '< 18.5', label: 'Underweight', color: 'bg-blue-500' },
-                { range: '18.5 – 24.9', label: 'Healthy Weight', color: 'bg-green-500' },
-                { range: '25.0 – 29.9', label: 'Overweight', color: 'bg-amber-500' },
-                { range: '≥ 30.0', label: 'Obese', color: 'bg-red-500' },
-              ].map(item => (
-                <div key={item.label} className="flex items-center justify-between p-3 rounded-xl bg-gray-50/50 dark:bg-slate-900/50 border border-transparent hover:border-gray-200 dark:hover:border-white/10 transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${item.color}`} aria-hidden="true"></div>
-                    <span className="text-xs font-bold text-gray-600 dark:text-gray-300">{item.label}</span>
-                  </div>
-                  <span className="text-xs font-black text-gray-800 dark:text-white">{item.range}</span>
-                </div>
-              ))}
-            </div>
-          </aside>
+          
+          <AdSlot type="square" className="rounded-4xl overflow-hidden" />
         </div>
-      </section>
+      </div>
     </div>
   );
 };

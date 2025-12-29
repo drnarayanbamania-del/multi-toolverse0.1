@@ -33,53 +33,64 @@ const DailyNews: React.FC = () => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const catLabel = NEWS_CATEGORIES.find(c => c.id === category)?.label || category;
       
-      const prompt = `Find the top 5 most important and verified news stories for today specifically from India in the "${catLabel}" category. 
-      Focus on major headlines, trending topics, and reliable Indian news sources (like TOI, The Hindu, NDTV, etc.).
+      const prompt = `Find the top 5 most important and verified news stories for today from India in the "${catLabel}" category. 
+      For each story, provide exactly these two lines:
+      TITLE: [Headline]
+      SUMMARY: [2-sentence explanation]
       
-      For each story, provide:
-      1. A catchy but accurate title.
-      2. A concise 2-sentence summary highlighting why it's important.
-      
-      Return the results as a clean list with clear separation between stories. Do not use JSON. Use search to ensure the news is from the last 24 hours.`;
+      Separate stories with a blank line. Do not use JSON or citations. Only include news from the last 24 hours.`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-3-pro-preview",
         contents: prompt,
         config: {
           tools: [{ googleSearch: {} }],
+          temperature: 0.1
         },
       });
 
       const text = response.text || "";
       const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
 
-      // Simple parsing of text to extract stories
-      const lines = text.split('\n').filter(l => l.trim().length > 15);
+      // Improved parsing logic looking for TITLE/SUMMARY pairs
       const items: NewsItem[] = [];
+      const stories = text.split(/\n\n+/);
       
-      let currentItem: Partial<NewsItem> = {};
-      let storyCount = 0;
-
-      for (let i = 0; i < lines.length && storyCount < 5; i++) {
-        const line = lines[i].replace(/^\d+\.\s*/, '').replace(/^\*\*\s*/, '').replace(/\*\*/g, '').replace(/^- \s*/, '').trim();
+      stories.forEach((story, idx) => {
+        const titleMatch = story.match(/TITLE:\s*(.*)/i);
+        const summaryMatch = story.match(/SUMMARY:\s*(.*)/i);
         
-        if (!currentItem.title) {
-          currentItem.title = line;
-        } else {
-          currentItem.summary = line;
-          const chunk = groundingChunks[storyCount];
-          currentItem.url = chunk?.web?.uri || chunk?.maps?.uri || "https://news.google.co.in";
-          
-          items.push(currentItem as NewsItem);
-          currentItem = {};
-          storyCount++;
+        if (titleMatch && summaryMatch) {
+          items.push({
+            title: titleMatch[1].trim(),
+            summary: summaryMatch[1].trim(),
+            url: groundingChunks[idx]?.web?.uri || "https://news.google.co.in"
+          });
+        }
+      });
+
+      if (items.length === 0) {
+        // Fallback simple split if marker parsing fails
+        const lines = text.split('\n').filter(l => l.length > 20);
+        for (let i = 0; i < lines.length && items.length < 5; i += 2) {
+          if (lines[i] && lines[i+1]) {
+            items.push({
+              title: lines[i].replace(/TITLE:\s*/i, '').trim(),
+              summary: lines[i+1].replace(/SUMMARY:\s*/i, '').trim(),
+              url: groundingChunks[Math.floor(i/2)]?.web?.uri || "https://news.google.co.in"
+            });
+          }
         }
       }
 
-      setNews(items);
+      if (items.length > 0) {
+        setNews(items);
+      } else {
+        setError("We couldn't synthesize the headlines right now. Please try again in a moment.");
+      }
     } catch (err: any) {
       console.error("AI Fetch Error:", err);
-      setError("Unable to connect to India News network. Please try refreshing.");
+      setError("Unable to connect to the news network. Please check your connection or try again.");
     } finally {
       setIsLoading(false);
     }
@@ -109,7 +120,7 @@ const DailyNews: React.FC = () => {
         <button 
           onClick={() => fetchNews(activeCategory)}
           disabled={isLoading}
-          className="p-3 w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-gray-100 dark:border-white/10 text-primary-500 hover:bg-primary-500 hover:text-white transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center"
+          className="p-3 w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-gray-100 dark:border-white/10 text-brand-orange hover:bg-brand-orange hover:text-white transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center"
         >
           <i className={`fas fa-rotate ${isLoading ? 'fa-spin' : ''}`}></i>
         </button>
@@ -123,8 +134,8 @@ const DailyNews: React.FC = () => {
             onClick={() => setActiveCategory(cat.id)}
             className={`flex items-center gap-3 px-6 py-3 rounded-2xl font-bold whitespace-nowrap transition-all border ${
               activeCategory === cat.id 
-                ? 'bg-primary-500 text-white border-primary-500 shadow-lg shadow-primary-500/20' 
-                : 'bg-white dark:bg-slate-800 text-gray-500 border-gray-100 dark:border-white/5 hover:border-primary-500/50'
+                ? 'bg-brand-orange text-white border-brand-orange shadow-lg shadow-brand-orange/20' 
+                : 'bg-white dark:bg-slate-800 text-gray-500 border-gray-100 dark:border-white/5 hover:border-brand-orange/50'
             }`}
           >
             <i className={`fas ${cat.icon}`}></i>
@@ -145,25 +156,26 @@ const DailyNews: React.FC = () => {
                 </div>
               ))}
               <div className="flex flex-col items-center justify-center py-10 text-center opacity-50">
-                 <i className="fas fa-satellite-dish text-4xl mb-4 text-primary-500 animate-bounce"></i>
-                 <p className="text-xs font-black uppercase tracking-widest dark:text-white">Scanning Indian News Cycles...</p>
+                 <i className="fas fa-satellite-dish text-4xl mb-4 text-brand-orange animate-bounce"></i>
+                 <p className="text-xs font-black uppercase tracking-widest dark:text-white">Scanning News Cycles...</p>
               </div>
             </div>
           ) : error ? (
             <div className="bg-red-500/10 rounded-[2.5rem] p-12 border border-red-500/20 text-center">
               <i className="fas fa-triangle-exclamation text-4xl text-red-500 mb-4"></i>
               <p className="text-sm font-bold text-red-600 dark:text-red-400">{error}</p>
+              <button onClick={() => fetchNews(activeCategory)} className="mt-6 px-6 py-2 bg-red-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-600 transition-colors">Retry Sync</button>
             </div>
           ) : news.length > 0 ? (
             <div className="space-y-6">
               {news.map((item, idx) => (
                 <article 
                   key={idx} 
-                  className="group bg-white/80 dark:bg-slate-800/40 rounded-[2rem] p-8 border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-xl hover:shadow-primary-500/5 transition-all duration-500 animate-in slide-in-from-bottom-4"
+                  className="group bg-white/80 dark:bg-slate-800/40 rounded-[2rem] p-8 border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-xl hover:shadow-brand-orange/5 transition-all duration-500 animate-in slide-in-from-bottom-4"
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
                   <div className="flex justify-between items-start mb-4">
-                    <h2 className="text-xl font-black text-gray-900 dark:text-white group-hover:text-primary-500 transition-colors leading-snug pr-4">
+                    <h2 className="text-xl font-black text-gray-900 dark:text-white group-hover:text-brand-orange transition-colors leading-snug pr-4">
                       {item.title}
                     </h2>
                     <span className="px-2 py-1 rounded bg-gray-100 dark:bg-white/5 text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">
@@ -175,14 +187,14 @@ const DailyNews: React.FC = () => {
                   </p>
                   <div className="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-white/5">
                     <div className="flex items-center gap-2">
-                       <div className="w-2 h-2 rounded-full bg-secondary animate-pulse"></div>
+                       <div className="w-2 h-2 rounded-full bg-brand-orange animate-pulse"></div>
                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sourced from News Grounding</span>
                     </div>
                     <a 
                       href={item.url} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-xs font-black text-primary-500 hover:text-primary-600 transition-all group/link"
+                      className="inline-flex items-center gap-2 text-xs font-black text-brand-orange hover:text-brand-orange/80 transition-all group/link"
                     >
                       VISIT SOURCE 
                       <i className="fas fa-arrow-up-right-from-square text-[10px] transition-transform group-hover/link:-translate-y-0.5 group-hover/link:translate-x-0.5"></i>
@@ -201,23 +213,23 @@ const DailyNews: React.FC = () => {
 
         {/* Sidebar/Ad Section */}
         <div className="lg:col-span-4 space-y-6">
-           <div className="bg-gradient-to-br from-gray-900 to-slate-950 rounded-[2.5rem] p-8 text-white relative overflow-hidden group shadow-lg">
+           <div className="bg-brand-navy dark:bg-slate-950 rounded-[2.5rem] p-8 text-white relative overflow-hidden group shadow-lg">
              <div className="absolute -right-4 -bottom-4 opacity-10">
                 <i className="fas fa-earth-asia text-9xl rotate-12 transition-transform duration-700 group-hover:rotate-0"></i>
              </div>
              <h3 className="text-lg font-black mb-4 flex items-center gap-2 relative z-10">
-               <i className="fas fa-shield-halved text-secondary" aria-hidden="true"></i> Smart Curation
+               <i className="fas fa-shield-halved text-brand-orange" aria-hidden="true"></i> Smart Curation
              </h3>
-             <p className="text-gray-400 text-xs leading-relaxed relative z-10 mb-6">
+             <p className="text-slate-400 text-xs leading-relaxed relative z-10 mb-6">
                Focusing on credible Indian outlets like PTI, ANI, and major national dailies to give you a clutter-free experience.
              </p>
              <div className="p-4 bg-white/5 rounded-2xl border border-white/5 relative z-10">
                 <div className="flex justify-between items-center mb-2">
-                   <span className="text-[9px] font-black uppercase tracking-widest text-primary-400">Search Region</span>
-                   <span className="text-[9px] font-bold text-orange-500">IND - Verified</span>
+                   <span className="text-[9px] font-black uppercase tracking-widest text-brand-orange">Search Region</span>
+                   <span className="text-[9px] font-bold text-brand-orange">IND - Verified</span>
                 </div>
                 <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                   <div className="h-full bg-primary-500 w-full animate-pulse"></div>
+                   <div className="h-full bg-brand-orange w-full animate-pulse"></div>
                 </div>
              </div>
            </div>
@@ -228,7 +240,7 @@ const DailyNews: React.FC = () => {
              <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Trending in India</h4>
              <div className="flex flex-wrap gap-2">
                {['#IPL2024', '#ElectionUpdate', '#DigitalIndia', '#StartupIndia', '#Nifty50', '#Budget2024'].map(tag => (
-                 <span key={tag} className="px-3 py-1.5 bg-gray-50 dark:bg-white/5 rounded-xl text-[10px] font-bold text-gray-500 dark:text-gray-400 hover:text-primary-500 transition-colors cursor-default">
+                 <span key={tag} className="px-3 py-1.5 bg-gray-50 dark:bg-white/5 rounded-xl text-[10px] font-bold text-gray-500 dark:text-gray-400 hover:text-brand-orange transition-colors cursor-default">
                    {tag}
                  </span>
                ))}

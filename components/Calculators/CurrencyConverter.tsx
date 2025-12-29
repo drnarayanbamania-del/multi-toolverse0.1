@@ -1,39 +1,87 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+
+const REFRESH_INTERVAL = 60000; // 60 seconds
 
 const CurrencyConverter: React.FC = () => {
   const [amount, setAmount] = useState<number>(1);
+  const [inputError, setInputError] = useState<string | null>(null);
   const [fromCurrency, setFromCurrency] = useState<string>('USD');
   const [toCurrency, setToCurrency] = useState<string>('EUR');
   const [rates, setRates] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState<boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>('');
+  const [justUpdated, setJustUpdated] = useState<boolean>(false);
 
-  const fetchRates = async (base: string) => {
+  const fetchRates = useCallback(async (base: string, silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
+      else setIsRefreshing(true);
+
       const response = await fetch(`https://open.er-api.com/v6/latest/${base}`);
       const data = await response.json();
+      
       if (data.result === 'success') {
         setRates(data.rates);
-        setLastUpdated(new Date(data.time_last_update_utc).toLocaleString());
+        setLastUpdated(new Date(data.time_last_update_utc).toLocaleTimeString());
         setError(null);
+        
+        // Trigger a visual flash for the update
+        setJustUpdated(true);
+        setTimeout(() => setJustUpdated(false), 2000);
       } else {
-        setError('Failed to fetch exchange rates.');
+        if (!silent) setError('Failed to fetch exchange rates.');
       }
     } catch (err) {
-      setError('Error connecting to currency service.');
+      if (!silent) setError('Error connecting to currency service.');
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
-  };
+  }, []);
 
+  // Initial fetch and base currency change handler
   useEffect(() => {
     fetchRates(fromCurrency);
-  }, [fromCurrency]);
+  }, [fromCurrency, fetchRates]);
 
-  const convertedAmount = rates[toCurrency] ? (amount * rates[toCurrency]).toFixed(2) : '0.00';
+  // Real-time background refresh interval
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchRates(fromCurrency, true);
+    }, REFRESH_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [fromCurrency, fetchRates]);
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    const num = parseFloat(val);
+
+    if (val === '') {
+      setAmount(0);
+      setInputError(null);
+      return;
+    }
+
+    if (isNaN(num)) {
+      setInputError('Please enter a valid numeric value.');
+    } else if (num < 0) {
+      setInputError('Amount cannot be negative.');
+    } else if (num > 1000000000) {
+      setInputError('Amount exceeds maximum limit (1 Billion).');
+    } else {
+      setInputError(null);
+    }
+
+    setAmount(num);
+  };
+
+  const convertedAmount = (rates[toCurrency] && !inputError && amount > 0) 
+    ? (amount * rates[toCurrency]).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
+    : '0.00';
 
   const swapCurrencies = () => {
     const temp = fromCurrency;
@@ -47,12 +95,18 @@ const CurrencyConverter: React.FC = () => {
     <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-900/30 border border-primary-100 dark:border-primary-800 text-[10px] font-black text-primary-600 dark:text-primary-300 uppercase tracking-widest">
-            Finance & Markets
+          <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-900/30 border border-primary-100 dark:border-primary-800 text-[10px] font-black text-primary-600 dark:text-primary-300 uppercase tracking-widest">
+              Finance & Markets
+            </div>
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest transition-opacity ${isRefreshing ? 'animate-pulse opacity-100' : 'opacity-60'}`}>
+              <i className={`fas fa-sync-alt ${isRefreshing ? 'fa-spin' : ''}`}></i>
+              Live Sync Active
+            </div>
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight">Currency Converter</h1>
           <p className="text-gray-500 dark:text-gray-400 max-w-xl">
-            Real-time global exchange rates. Convert between {Object.keys(rates).length}+ currencies instantly.
+            Real-time global exchange rates with background auto-sync. Convert between {Object.keys(rates).length || '160'}+ currencies instantly.
           </p>
         </div>
       </div>
@@ -64,19 +118,24 @@ const CurrencyConverter: React.FC = () => {
             {/* Amount Input */}
             <div className="space-y-4">
               <label className="text-sm font-bold text-gray-400 uppercase tracking-widest px-2">Amount to Convert</label>
-              <div className="flex items-center gap-4 bg-gray-50 dark:bg-slate-900 p-4 rounded-3xl border border-gray-100 dark:border-white/5 shadow-inner">
-                <div className="w-12 h-12 rounded-2xl bg-primary-500 text-white flex items-center justify-center text-xl font-bold">
+              <div className={`flex items-center gap-4 bg-gray-50 dark:bg-slate-900 p-4 rounded-3xl border transition-colors shadow-inner ${inputError ? 'border-red-500/50 bg-red-50/10' : 'border-gray-100 dark:border-white/5'}`}>
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold transition-colors ${inputError ? 'bg-red-500 text-white' : 'bg-primary-500 text-white'}`}>
                   {fromCurrency.substring(0, 1)}
                 </div>
                 <input 
                   type="number" 
-                  value={amount}
-                  onChange={(e) => setAmount(Number(e.target.value))}
+                  value={amount === 0 ? '' : amount}
+                  onChange={handleAmountChange}
                   className="flex-1 bg-transparent border-none font-black text-3xl text-gray-900 dark:text-white focus:ring-0"
                   placeholder="0.00"
                 />
                 <span className="text-xl font-bold text-gray-400 mr-4">{fromCurrency}</span>
               </div>
+              {inputError && (
+                <p className="text-[10px] font-black text-red-500 uppercase tracking-widest px-2 animate-pulse">
+                  <i className="fas fa-circle-exclamation mr-1"></i> {inputError}
+                </p>
+              )}
             </div>
 
             {/* From/To Selection */}
@@ -154,18 +213,23 @@ const CurrencyConverter: React.FC = () => {
              <div className="relative z-10 space-y-6">
                <div className="flex justify-between items-center">
                  <span className="text-xs font-black uppercase tracking-[0.2em] opacity-70">Exchange Result</span>
-                 {loading && <i className="fas fa-circle-notch fa-spin"></i>}
+                 {(loading || isRefreshing) && <i className="fas fa-circle-notch fa-spin"></i>}
                </div>
 
                <div className="space-y-1">
-                 <p className="text-sm font-bold opacity-80">{amount} {fromCurrency} =</p>
-                 <h2 className="text-6xl font-black break-words">{convertedAmount} <span className="text-2xl opacity-60">{toCurrency}</span></h2>
+                 <p className="text-sm font-bold opacity-80">{inputError ? '---' : amount} {fromCurrency} =</p>
+                 <h2 className={`text-6xl font-black break-words transition-all duration-500 ${justUpdated ? 'scale-[1.02] text-white' : 'scale-100'}`}>
+                   {inputError ? 'N/A' : convertedAmount} <span className="text-2xl opacity-60">{toCurrency}</span>
+                 </h2>
                </div>
 
                <div className="pt-6 border-t border-white/20">
                  <div className="flex justify-between items-center text-xs">
                     <span className="opacity-70">1 {fromCurrency} = {rates[toCurrency]?.toFixed(4)} {toCurrency}</span>
-                    <span className="opacity-70 text-[10px]">Updated: {lastUpdated || 'Loading...'}</span>
+                    <span className={`transition-all duration-500 text-[10px] font-bold ${justUpdated ? 'text-emerald-300' : 'opacity-70'}`}>
+                      {justUpdated ? <i className="fas fa-check-circle mr-1"></i> : <i className="fas fa-clock mr-1"></i>}
+                      {lastUpdated || 'Loading...'}
+                    </span>
                  </div>
                </div>
              </div>
@@ -173,7 +237,7 @@ const CurrencyConverter: React.FC = () => {
 
           <div className="bg-white dark:bg-slate-800/60 rounded-[2.5rem] border border-gray-100 dark:border-white/5 p-8 backdrop-blur-sm">
              <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest mb-6 flex items-center gap-2">
-                <i className="fas fa-circle-info text-primary-500"></i> Converter Info
+                <i className="fas fa-bolt text-primary-500"></i> Auto-Sync Status
              </h4>
              {error ? (
                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-xs font-bold flex items-center gap-3">
@@ -183,22 +247,22 @@ const CurrencyConverter: React.FC = () => {
              ) : (
                <ul className="space-y-4">
                  <li className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full bg-green-500/10 text-green-500 flex items-center justify-center mt-0.5">
+                    <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mt-0.5">
                       <i className="fas fa-check text-[10px]"></i>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Rates are updated every 24 hours based on mid-market data.</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">System is polling latest mid-market data every 60 seconds.</p>
                  </li>
                  <li className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full bg-green-500/10 text-green-500 flex items-center justify-center mt-0.5">
+                    <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mt-0.5">
                       <i className="fas fa-check text-[10px]"></i>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Supporting major world currencies and cryptocurrencies.</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Exchange results use high-precision decimals for accuracy.</p>
                  </li>
                  <li className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full bg-green-500/10 text-green-500 flex items-center justify-center mt-0.5">
+                    <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mt-0.5">
                       <i className="fas fa-check text-[10px]"></i>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Powered by open exchange rate data APIs.</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Automatic healing if server connection is temporarily lost.</p>
                  </li>
                </ul>
              )}
